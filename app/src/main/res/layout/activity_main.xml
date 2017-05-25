@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.example.jaya.bluetoothwear.MainActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Hello World!"
+        app:layout_constraintLeft_toLeftOf="@+id/btnSendMsg"
+        app:layout_constraintRight_toRightOf="@+id/btnSendMsg"
+        app:layout_constraintHorizontal_bias="0.486"
+        app:layout_constraintBottom_toTopOf="@+id/btnSendMsg"
+        android:id="@+id/tvShowMsg"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btnSendMsg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="发送字符串'IPMC'"
+        android:layout_marginLeft="80dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginStart="111dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvShowMsg" />
+
+</android.support.constraint.ConstraintLayout>
