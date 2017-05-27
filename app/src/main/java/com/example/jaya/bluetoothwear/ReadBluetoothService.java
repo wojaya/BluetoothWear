@@ -94,7 +94,6 @@ public class ReadBluetoothService extends Service {
         }
     }
 
-
     public void Connect() {
 
         BluetoothDevice device = myBluetoothAdapter.getRemoteDevice(address);
@@ -107,6 +106,9 @@ public class ReadBluetoothService extends Service {
             btSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
             btSocket.connect();
             Log.e(TAG, "Connection made.");
+
+            DisplayToast("配对成功！");
+
         } catch (IOException e) {
             try {
                 btSocket.close();
