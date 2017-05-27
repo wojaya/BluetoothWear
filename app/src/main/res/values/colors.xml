@@ -3,4 +3,13 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="holo_primary">#222222</color>
+    <color name="holo_primary_dark">#000000</color>
+    <color name="background_holo_dark">#000000</color>
+    <color name="bright_foreground_holo_dark">#f3f3f3</color>
+    <color name="primary_material_dark_1">#212121</color>
+    <color name="primary_dark_material_dark">#000000</color>
+    <color name="accent_material_dark">#009999</color>
+    <color name="background_material_dark">#303030</color>
+    <color name="foreground_material_dark">#ffffff</color>
 </resources>

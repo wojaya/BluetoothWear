@@ -7,28 +7,57 @@
     android:layout_height="match_parent"
     tools:context="com.example.jaya.bluetoothwear.MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <TableRow
+        android:id="@+id/tableRow"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="Hello World!"
-        app:layout_constraintLeft_toLeftOf="@+id/btnSendMsg"
-        app:layout_constraintRight_toRightOf="@+id/btnSendMsg"
-        app:layout_constraintHorizontal_bias="0.486"
-        app:layout_constraintBottom_toTopOf="@+id/btnSendMsg"
-        android:id="@+id/tvShowMsg"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/btnSendMsg"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="发送字符串'IPMC'"
-        android:layout_marginLeft="80dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:layout_marginStart="111dp"
+        android:layout_marginBottom="60dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvShowMsg" />
+        android:layout_marginLeft="8dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginRight="8dp"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp">
+
+        <Button
+            android:id="@+id/btnOpenBt"
+            style="@style/MyTextSize"
+            android:onClick="onEnableButtonClicked"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="打开蓝牙" />
+    </TableRow>
+
+    <TableRow
+        android:id="@+id/tableRow3"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@+id/tableRow"
+        android:layout_marginLeft="8dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_marginRight="8dp"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp">
+
+        <Button
+            android:id="@+id/btnConnBt"
+            style="@style/MyTextSize"
+            android:onClick="onStartDiscoveryButtonClicked"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="配对" />
+
+        <Button
+            android:id="@+id/btnCloseBt"
+            style="@style/MyTextSize"
+            android:onClick="onDisableButtonClicked"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="关闭蓝牙" />
+    </TableRow>
 
 </android.support.constraint.ConstraintLayout>

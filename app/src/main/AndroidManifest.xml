@@ -17,7 +17,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/BtWearTheme">
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -29,9 +29,13 @@
         <service
             android:name=".ReadBluetoothService"
             android:label="Read Service">
-            <!--android:enabled="true"-->
-            <!--android:exported="true">-->
+
+            <!-- android:enabled="true" -->
+            <!-- android:exported="true"> -->
         </service>
+        <service
+            android:name=".MyIntentService"
+            android:exported="false"></service>
     </application>
 
 </manifest>
