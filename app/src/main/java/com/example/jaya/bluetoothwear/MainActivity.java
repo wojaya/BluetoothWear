@@ -3,6 +3,8 @@ package com.example.jaya.bluetoothwear;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
@@ -15,6 +17,9 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "IPMC>>>>>>>>>>";
     private static final boolean D = true;
     private static Intent intent = null;
+
+    private Handler mUiHandler = new Handler();
+    private MyWorkerThread mWorkThread;
 
     Button btnOpenBt, btnCloseBt, btnConnBt;
 
@@ -31,13 +36,34 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, "+++ ON CREATE +++");
         }
 
-        if (!btMyAdapter.isEnabled()) {
-            btnConnBt.setEnabled(false);
-            btnCloseBt.setEnabled(false);
-        } else {
-            btnOpenBt.setEnabled(false);
-            btnConnBt.setEnabled(true);
-        }
+        mWorkThread = new MyWorkerThread("myWorkerThread");
+        mWorkThread.start();
+        mWorkThread.prepareHandler();
+
+        Runnable initialBtTask = new Runnable() {
+            @Override
+            public void run() {
+
+                if (!btMyAdapter.isEnabled()) {
+                    mUiHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            btnConnBt.setEnabled(false);
+                            btnCloseBt.setEnabled(false);
+                        }
+                    });
+                } else {
+                    mUiHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            btnOpenBt.setEnabled(false);
+                            btnConnBt.setEnabled(true);
+                        }
+                    });
+                }
+            }
+        };
+        mWorkThread.postTask(initialBtTask);
     }
 
     @Override
@@ -60,12 +86,22 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, "++++++ ON RESUME ++++++");
         }
 
+        // TODO: 2017/5/27 service与activity通讯
+/*
+        IntentFilter filter = new IntentFilter(ReadBluetoothService.ACTION);
+        LocalBroadcastManager.getInstance(this).registerReceiver(testReceiver, filter);
+*/
     }
 
     @Override
     public void onPause() {
 
         super.onPause();
+
+        // TODO: 2017/5/27 service与activity通讯
+/*
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(testReceiver);
+*/
 
         if (D) {
             Log.e(TAG, "······· ON PAUSE ·······");
@@ -81,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
         if (D) {
             Log.e(TAG, "/////// ON STOP ///////");
         }
+
     }
 
     @Override
@@ -92,8 +129,8 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, "====== ON DESTROY ======");
         }
 
+        mWorkThread.quit();
         stopService(intent);
-
     }
 
     private void findViewById () {
@@ -103,24 +140,42 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /* 开启蓝牙 */
-    public void onEnableButtonClicked (View view)
-    {
-        btMyAdapter.enable();
-
-        btnOpenBt.setEnabled(false);
-        btnConnBt.setEnabled(true);
-        btnCloseBt.setEnabled(true);
+    public void onEnableButtonClicked (View view) {
+        Runnable openBtTask = new Runnable() {
+            @Override
+            public void run() {
+                btMyAdapter.enable();
+                mUiHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        btnOpenBt.setEnabled(false);
+                        btnConnBt.setEnabled(true);
+                        btnCloseBt.setEnabled(true);
+                    }
+                });
+            }
+        };
+        mWorkThread.postTask(openBtTask);
     }
 
 
     /* 关闭蓝牙 */
-    public void onDisableButtonClicked (View view)
-    {
-        btMyAdapter.disable();
-
-        btnConnBt.setEnabled(false);
-        btnOpenBt.setEnabled(true);
-        btnCloseBt.setEnabled(false);
+    public void onDisableButtonClicked (View view) {
+        Runnable closeBtTask = new Runnable() {
+            @Override
+            public void run() {
+                btMyAdapter.disable();
+                mUiHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        btnOpenBt.setEnabled(true);
+                        btnConnBt.setEnabled(false);
+                        btnCloseBt.setEnabled(false);
+                    }
+                });
+            }
+        };
+        mWorkThread.postTask(closeBtTask);
     }
 
 
@@ -137,4 +192,32 @@ public class MainActivity extends AppCompatActivity {
         toast.setGravity(Gravity.TOP, 0, 220);
         toast.show();
     }
+
+    public class MyWorkerThread extends HandlerThread {
+        private Handler mWorkerHandler;
+
+        public MyWorkerThread(String name) {
+            super(name);
+        }
+
+        public void prepareHandler() {
+            mWorkerHandler = new Handler(getLooper());
+        }
+
+        public void postTask(Runnable task) {
+            mWorkerHandler.post(task);
+        }
+    }
+
+    // TODO: 2017/5/27 service与activity通讯
+/*
+    private BroadcastReceiver testReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive (Context context, Intent intent) {
+            String result = intent.getStringExtra("result");
+            Toast.makeText(MainActivity.this, result, Toast.LENGTH_SHORT).show();
+        }
+    };
+*/
+
 }

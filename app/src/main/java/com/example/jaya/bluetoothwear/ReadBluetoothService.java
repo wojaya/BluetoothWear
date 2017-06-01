@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.Gravity;
@@ -24,22 +25,89 @@ public class ReadBluetoothService extends Service {
     public OutputStream myOutStream = null;
     public InputStream myInStream = null;
 
+    private MyServiceThread myServiceThread;
+    private Handler mServiceHandler = new Handler();
+
+    // TODO: 2017/5/27 Service与Activity通讯
+/*
+    private LocalBroadcastManager mlocalBroadcastManager;
+    public static final String ACTION = "com.example.jaya.ReadBluetoothService";
+*/
+
 //    In Method beginListenForData();
     boolean stopWorkerTOF = false;
     byte delimiter = 10;
     int readBufferPosition = 0;
     byte[] readBuffer = new byte[1024];
-    Handler handler = new Handler();
+    private Handler handler = new Handler();
+    private Thread workerThread;
 
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private static String address = "20:16:10:32:18:75";
+    private static String address = "20:16:12:22:58:05";
 
     public ReadBluetoothService() {
     }
 
+    public class MyServiceThread extends HandlerThread {
+        private Handler mServiceHandler;
+
+        public MyServiceThread(String name) {
+            super(name);
+        }
+
+        public void prepareHandler() {
+            mServiceHandler = new Handler(getLooper());
+        }
+
+        public void postTask(Runnable task) {
+            mServiceHandler.post(task);
+        }
+    }
+
+    Runnable mBackgroundRunnable = new Runnable() {
+        @Override
+        public void run() {
+
+            // TODO: 2017/5/27 Service与Activity通讯
+/*
+            Intent intent = new Intent(ACTION);
+            intent.putExtra("result", "foo bar");
+            mlocalBroadcastManager.sendBroadcast(intent);
+//            if desired, stop the service.
+            stopSelf();
+*/
+
+            BluetoothDevice device = myBluetoothAdapter.getRemoteDevice(address);
+
+            Log.e(TAG, "Connecting to ... " + device);
+
+            myBluetoothAdapter.cancelDiscovery();
+
+            try {
+                btSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
+                btSocket.connect();
+                Log.e(TAG, "Connection made.");
+
+                mServiceHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        DisplayToast("配对成功！");
+                    }
+                });
+            } catch (IOException e) {
+                try {
+                    btSocket.close();
+                } catch (IOException e2) {
+                    Log.e(TAG, "Unable to end the connection");
+                }
+                Log.e(TAG, "Socket creation failed");
+            }
+            beginListenForData();
+        }
+    };
+
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
 //        return new MyBinder();
     }
@@ -50,6 +118,15 @@ public class ReadBluetoothService extends Service {
         Log.e("TAG", "ReadBluetoothService is Created");
 
         CheckBt();
+
+        myServiceThread = new MyServiceThread("MyServiceThread");
+        myServiceThread.start();
+        myServiceThread.prepareHandler();
+
+        // TODO: 2017/5/27 Service与Activity通讯
+/*
+        mlocalBroadcastManager = LocalBroadcastManager.getInstance(this);
+*/
     }
 
     @Override
@@ -57,10 +134,10 @@ public class ReadBluetoothService extends Service {
     {
         Log.e("TAG", "ReadBluetoothService is Started");
 
-        Connect();
+        myServiceThread.postTask(mBackgroundRunnable);
 
-        writeData("IPMC");
-        DisplayToast("已发送字符串：IPMC");
+//        writeData("IPMC");
+//        DisplayToast("已发送字符串：IPMC");
 
         return START_STICKY;
     }
@@ -76,11 +153,13 @@ public class ReadBluetoothService extends Service {
         } catch (IOException e) {
             Log.e(TAG, "Unable to end the bluetoothConnection");
         }
+
+        stopListenForData(true);
+        myServiceThread.quit();
     }
 
 
 //    public class MyBinder extends Binder {  }
-
 
     private void CheckBt() {
         myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -92,33 +171,6 @@ public class ReadBluetoothService extends Service {
         if (myBluetoothAdapter == null) {
             DisplayToast("Bluetooth null!");
         }
-    }
-
-    public void Connect() {
-
-        BluetoothDevice device = myBluetoothAdapter.getRemoteDevice(address);
-
-        Log.e(TAG, "Connecting to ... " + device);
-
-        myBluetoothAdapter.cancelDiscovery();
-
-        try {
-            btSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
-            btSocket.connect();
-            Log.e(TAG, "Connection made.");
-
-            DisplayToast("配对成功！");
-
-        } catch (IOException e) {
-            try {
-                btSocket.close();
-            } catch (IOException e2) {
-                Log.e(TAG, "Unable to end the connection");
-            }
-            Log.e(TAG, "Socket creation failed");
-        }
-
-        beginListenForData();
     }
 
     private void writeData (String data) {
@@ -142,9 +194,10 @@ public class ReadBluetoothService extends Service {
         try {
             myInStream = btSocket.getInputStream();
         } catch (IOException e) {
+            Log.e("TAG", "Bug while myInStream");
         }
 
-        Thread workerThread = new Thread(new Runnable()
+        workerThread = new Thread(new Runnable()
         {
             public void run()
             {
@@ -197,6 +250,12 @@ public class ReadBluetoothService extends Service {
         workerThread.start();
 
         Log.e("TAG", "InStream is started");
+    }
+
+    public void stopListenForData(boolean stopWorkerTOF){
+        this.stopWorkerTOF = stopWorkerTOF;
+        workerThread.interrupt();
+        workerThread = null;
     }
 
     public void DisplayToast (String str) {
