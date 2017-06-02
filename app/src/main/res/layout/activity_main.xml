@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.example.jaya.bluetoothwear.MainActivity">
@@ -26,7 +27,7 @@
             android:onClick="onEnableButtonClicked"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="打开蓝牙" />
+            android:text="@string/open_blueTooth" />
     </TableRow>
 
     <TableRow
@@ -48,7 +49,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="配对" />
+            android:text="@string/Connect_blueTooth" />
 
         <Button
             android:id="@+id/btnCloseBt"
@@ -57,7 +58,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="关闭蓝牙" />
+            android:text="@string/close_blueTooth" />
     </TableRow>
 
 </android.support.constraint.ConstraintLayout>
