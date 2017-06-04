@@ -1,14 +1,17 @@
 package com.example.jaya.bluetoothwear;
 
 import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -110,23 +113,12 @@ public class MainActivity extends AppCompatActivity {
         if (D) {
             Log.e(TAG, "++++++ ON RESUME ++++++");
         }
-
-        // TODO: 2017/5/27 service与activity通讯
-/*
-        IntentFilter filter = new IntentFilter(ReadBluetoothService.ACTION);
-        LocalBroadcastManager.getInstance(this).registerReceiver(testReceiver, filter);
-*/
     }
 
     @Override
     public void onPause() {
 
         super.onPause();
-
-        // TODO: 2017/5/27 service与activity通讯
-/*
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(testReceiver);
-*/
 
         if (D) {
             Log.e(TAG, "······· ON PAUSE ·······");
@@ -212,11 +204,11 @@ public class MainActivity extends AppCompatActivity {
         btnConnBt.setEnabled(false);
     }
 
-    public void DisplayToast (String str) {
+/*    public void DisplayToast (String str) {
         Toast toast=Toast.makeText(this, str, Toast.LENGTH_LONG);
         toast.setGravity(Gravity.TOP, 0, 220);
         toast.show();
-    }
+    }*/
 
     public class MyWorkerThread extends HandlerThread {
         private Handler mWorkerHandler;
@@ -234,27 +226,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // TODO: 2017/5/27 service与activity通讯
-/*
-    private BroadcastReceiver testReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive (Context context, Intent intent) {
-            String result = intent.getStringExtra("result");
-            Toast.makeText(MainActivity.this, result, Toast.LENGTH_SHORT).show();
-        }
-    };
-*/
-
     /**
      * A fragment containing a line chart.
      */
     public static class PlaceholderFragment extends Fragment {
 
-        private LineChartView chart;
+        private BtDataReceiver btDataReceiver;
+        private float FloatBtReceiveData;
+        public LineChartView chart;
         private LineChartData data;
         private int numberOfLines = 1;
         private int maxNumberOfLines = 4;
         private int numberOfPoints = 12;
+        private float theLastXValue = (float)numberOfPoints;
 
         float[][] randomNumbersTab = new float[maxNumberOfLines][numberOfPoints];
 
@@ -268,9 +252,20 @@ public class MainActivity extends AppCompatActivity {
         private boolean isCubic = false;
         private boolean hasLabelForSelected = false;
         private boolean pointsHaveDifferentColor;
-        private boolean hasGradientToTransparent = false;
+//        private boolean hasGradientToTransparent = false;
 
         public PlaceholderFragment() {
+        }
+
+        @Override
+        public void onAttach (Context context) {
+            // TODO: 2017/6/4 fragment receiver
+            super.onAttach(context);
+            btDataReceiver = new BtDataReceiver();
+            IntentFilter filter = new IntentFilter(ReadBluetoothService.ACTION);
+            LocalBroadcastManager.getInstance(getActivity()).registerReceiver(btDataReceiver, filter);
+
+            Log.e("TAG", "onAttach is Done");
         }
 
         @Override
@@ -308,11 +303,10 @@ public class MainActivity extends AppCompatActivity {
                 generateData();
                 return true;
             }
-            if (id == R.id.action_add_line) {
-                // TODO: 2017/6/2 可以用于添加其他人心率数据
+/*            if (id == R.id.action_add_line) {
                 addLineToData();
                 return true;
-            }
+            }*/
             if (id == R.id.action_toggle_lines) {
                 toggleLines();
                 return true;
@@ -341,13 +335,11 @@ public class MainActivity extends AppCompatActivity {
                 toggleAxesNames();
                 return true;
             }
-/*
-            if (id == R.id.action_animate) {
+/*            if (id == R.id.action_animate) {
                 prepareDataAnimation();
                 chart.startDataAnimation();
                 return true;
-            }
-*/
+            }*/
             if (id == R.id.action_toggle_selection_mode) {
                 toggleLabelForSelected();
 
@@ -379,7 +371,7 @@ public class MainActivity extends AppCompatActivity {
         private void generateValues() {
             for (int i = 0; i < maxNumberOfLines; ++i) {
                 for (int j = 0; j < numberOfPoints; ++j) {
-                    randomNumbersTab[i][j] = (float) Math.random() * 100f;
+                    randomNumbersTab[i][j] = 0f;
                 }
             }
         }
@@ -406,7 +398,7 @@ public class MainActivity extends AppCompatActivity {
             // Reset viewport height range to (0,100)
             final Viewport v = new Viewport(chart.getMaximumViewport());
             v.bottom = 0;
-            v.top = 100;
+            v.top = 20;
             v.left = 0;
             v.right = numberOfPoints - 1;
             chart.setMaximumViewport(v);
@@ -464,7 +456,7 @@ public class MainActivity extends AppCompatActivity {
          * Adds lines to data, after that data should be set again with
          * {@link LineChartView#setLineChartData(LineChartData)}. Last 4th line has non-monotonically x values.
          */
-        private void addLineToData() {
+  /*      private void addLineToData() {
             if (data.getLines().size() >= maxNumberOfLines) {
                 Toast.makeText(getActivity(), "Samples app uses max 4 lines!", Toast.LENGTH_SHORT).show();
                 return;
@@ -473,7 +465,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             generateData();
-        }
+        }*/
 
         private void toggleLines() {
             hasLines = !hasLines;
@@ -586,13 +578,26 @@ public class MainActivity extends AppCompatActivity {
          * {@link LineChartView#setLineChartData(LineChartData)} again.
          */
 
-        // TODO: 2017/6/2 该方法可能适用于数据动态更新
-        private void prepareDataAnimation() {
+        private void prepareDataAnimation(float btReceiveData) {
             for (Line line : data.getLines()) {
                 for (PointValue value : line.getValues()) {
-                    // Here I modify target only for Y values but it is OK to modify X targets as well.
-                    value.setTarget(value.getX(), (float) Math.random() * 100);
+                    value.setTarget(value.getX() - 1, value.getY());
+                    value.setTarget(theLastXValue, btReceiveData);
                 }
+            }
+        }
+
+        // TODO: 2017/5/27 service与activity通讯
+        public class BtDataReceiver extends BroadcastReceiver {
+            @Override
+            public void onReceive (Context context, Intent intent) {
+                String btReceiveData = intent.getStringExtra("btReceiveData");
+                btReceiveData = btReceiveData.substring(11, 15);
+                FloatBtReceiveData = Float.parseFloat(btReceiveData) / 1000f;
+
+                Log.e("TAG", btReceiveData);
+                prepareDataAnimation(FloatBtReceiveData);
+                chart.startDataAnimation();
             }
         }
 
@@ -609,6 +614,12 @@ public class MainActivity extends AppCompatActivity {
 
             }
 
+        }
+
+        @Override
+        public void onDestroyView() {
+            super.onDestroyView();
+            LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(btDataReceiver);
         }
     }
 

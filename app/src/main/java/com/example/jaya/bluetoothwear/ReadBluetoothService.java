@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Gravity;
 import android.widget.Toast;
@@ -29,17 +30,15 @@ public class ReadBluetoothService extends Service {
     private Handler mServiceHandler = new Handler();
 
     // TODO: 2017/5/27 Service与Activity通讯
-/*
     private LocalBroadcastManager mlocalBroadcastManager;
     public static final String ACTION = "com.example.jaya.ReadBluetoothService";
-*/
 
 //    In Method beginListenForData();
     boolean stopWorkerTOF = false;
     byte delimiter = 10;
     int readBufferPosition = 0;
     byte[] readBuffer = new byte[1024];
-    private Handler handler = new Handler();
+//    private Handler handler = new Handler();
     private Thread workerThread;
 
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -67,15 +66,6 @@ public class ReadBluetoothService extends Service {
     Runnable mBackgroundRunnable = new Runnable() {
         @Override
         public void run() {
-
-            // TODO: 2017/5/27 Service与Activity通讯
-/*
-            Intent intent = new Intent(ACTION);
-            intent.putExtra("result", "foo bar");
-            mlocalBroadcastManager.sendBroadcast(intent);
-//            if desired, stop the service.
-            stopSelf();
-*/
 
             BluetoothDevice device = myBluetoothAdapter.getRemoteDevice(address);
 
@@ -124,9 +114,7 @@ public class ReadBluetoothService extends Service {
         myServiceThread.prepareHandler();
 
         // TODO: 2017/5/27 Service与Activity通讯
-/*
         mlocalBroadcastManager = LocalBroadcastManager.getInstance(this);
-*/
     }
 
     @Override
@@ -217,23 +205,16 @@ public class ReadBluetoothService extends Service {
                                 {
                                     byte[] encodedBytes = new byte[readBufferPosition];
                                     System.arraycopy(readBuffer, 0, encodedBytes, 0, encodedBytes.length);
-                                    final String data = new String(encodedBytes, "US-ASCII");
+                                    final String dataMess = new String(encodedBytes, "US-ASCII");
                                     readBufferPosition = 0;
-                                    handler.post(new Runnable()
-                                    {
-                                        public void run()
-                                        {
 
-                                            DisplayToast("收到蓝牙信息：" + data);
+                                    Log.e("TAG", dataMess);
+                                    // TODO: 2017/5/27 Service与Activity通讯
+                                    Intent intent = new Intent(ACTION);
+                                    intent.putExtra("btReceiveData", dataMess);
+                                    mlocalBroadcastManager.sendBroadcast(intent);
 
-	                                        	/* You also can use Result.setText(data); it won't display multilines
-	                                        	*/
-
-                                        }
-                                    });
-                                }
-                                else
-                                {
+                                } else {
                                     readBuffer[readBufferPosition++] = b;
                                 }
                             }
@@ -259,7 +240,7 @@ public class ReadBluetoothService extends Service {
     }
 
     public void DisplayToast (String str) {
-        Toast toast=Toast.makeText(this, str, Toast.LENGTH_LONG);
+        Toast toast=Toast.makeText(this, str, Toast.LENGTH_SHORT);
         toast.setGravity(Gravity.TOP, 0, 220);
         toast.show();
     }
