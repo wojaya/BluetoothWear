@@ -232,13 +232,14 @@ public class MainActivity extends AppCompatActivity {
     public static class PlaceholderFragment extends Fragment {
 
         private BtDataReceiver btDataReceiver;
-        private float FloatBtReceiveData;
+        private float FloatBtReceiveData = 0f;
         public LineChartView chart;
         private LineChartData data;
         private int numberOfLines = 1;
         private int maxNumberOfLines = 4;
         private int numberOfPoints = 12;
-        private float theLastXValue = (float)numberOfPoints;
+//        private float theLastXValue = (float)numberOfPoints;
+        private List<PointValue> values;
 
         float[][] randomNumbersTab = new float[maxNumberOfLines][numberOfPoints];
 
@@ -279,6 +280,12 @@ public class MainActivity extends AppCompatActivity {
             // Generate some random values.
             generateValues();
 
+            values = new ArrayList<PointValue>();
+            int i = 0;
+            for (int j = 0; j < numberOfPoints; ++j) {
+                values.add(new PointValue(j, randomNumbersTab[i][j]));
+            }
+
             generateData();
 
             // Disable viewport recalculations, see toggleCubic() method for more info.
@@ -300,7 +307,7 @@ public class MainActivity extends AppCompatActivity {
             int id = item.getItemId();
             if (id == R.id.action_reset) {
                 reset();
-                generateData();
+                generateData(FloatBtReceiveData);
                 return true;
             }
 /*            if (id == R.id.action_add_line) {
@@ -398,11 +405,55 @@ public class MainActivity extends AppCompatActivity {
             // Reset viewport height range to (0,100)
             final Viewport v = new Viewport(chart.getMaximumViewport());
             v.bottom = 0;
-            v.top = 20;
+            v.top = 2;
             v.left = 0;
             v.right = numberOfPoints - 1;
             chart.setMaximumViewport(v);
             chart.setCurrentViewport(v);
+        }
+
+        private void generateData(float FloatBtReceiveData) {
+
+            List<Line> lines = new ArrayList<Line>();
+            for (int i = 0; i < numberOfLines; ++i) {
+
+                values.add(new PointValue(numberOfPoints, FloatBtReceiveData));
+
+                Line line = new Line(values);
+                line.setColor(ChartUtils.COLORS[i]);
+                line.setShape(shape);
+                line.setCubic(isCubic);
+                line.setFilled(isFilled);
+                line.setHasLabels(hasLabels);
+                line.setHasLabelsOnlyForSelected(hasLabelForSelected);
+                line.setHasLines(hasLines);
+                line.setHasPoints(hasPoints);
+//                line.setHasGradientToTransparent(hasGradientToTransparent);
+                if (pointsHaveDifferentColor){
+                    line.setPointColor(ChartUtils.COLORS[(i + 1) % ChartUtils.COLORS.length]);
+                }
+                lines.add(line);
+            }
+
+            data = new LineChartData(lines);
+
+            if (hasAxes) {
+                Axis axisX = new Axis();
+                Axis axisY = new Axis().setHasLines(true);
+                if (hasAxesNames) {
+                    axisX.setName("Time /s");
+                    axisY.setName("Voltage /mV");
+                }
+                data.setAxisXBottom(axisX);
+                data.setAxisYLeft(axisY);
+            } else {
+                data.setAxisXBottom(null);
+                data.setAxisYLeft(null);
+            }
+
+            data.setBaseValue(Float.NEGATIVE_INFINITY);
+            chart.setLineChartData(data);
+
         }
 
         private void generateData() {
@@ -470,19 +521,19 @@ public class MainActivity extends AppCompatActivity {
         private void toggleLines() {
             hasLines = !hasLines;
 
-            generateData();
+            generateData(FloatBtReceiveData);
         }
 
         private void togglePoints() {
             hasPoints = !hasPoints;
 
-            generateData();
+            generateData(FloatBtReceiveData);
         }
 
         private void toggleCubic() {
             isCubic = !isCubic;
 
-            generateData();
+            generateData(FloatBtReceiveData);
 
             if (isCubic) {
                 // It is good idea to manually set a little higher max viewport for cubic lines because sometimes line
@@ -534,7 +585,7 @@ public class MainActivity extends AppCompatActivity {
         private void toggleFilled() {
             isFilled = !isFilled;
 
-            generateData();
+            generateData(FloatBtReceiveData);
         }
 
         private void toggleLabels() {
@@ -545,7 +596,7 @@ public class MainActivity extends AppCompatActivity {
                 chart.setValueSelectionEnabled(hasLabelForSelected);
             }
 
-            generateData();
+            generateData(FloatBtReceiveData);
         }
 
         private void toggleLabelForSelected() {
@@ -557,19 +608,19 @@ public class MainActivity extends AppCompatActivity {
                 hasLabels = false;
             }
 
-            generateData();
+            generateData(FloatBtReceiveData);
         }
 
         private void toggleAxes() {
             hasAxes = !hasAxes;
 
-            generateData();
+            generateData(FloatBtReceiveData);
         }
 
         private void toggleAxesNames() {
             hasAxesNames = !hasAxesNames;
 
-            generateData();
+            generateData(FloatBtReceiveData);
         }
 
         /**
@@ -578,11 +629,17 @@ public class MainActivity extends AppCompatActivity {
          * {@link LineChartView#setLineChartData(LineChartData)} again.
          */
 
-        private void prepareDataAnimation(float btReceiveData) {
+        private void prepareDataAnimation() {
             for (Line line : data.getLines()) {
+/*
+                // TODO: 2017/6/5 Animation
+                List<PointValue> virtualValues = line.getValues();
+                virtualValues.add(new PointValue(numberOfPoints + 1, FloatBtReceiveData));
+                Line virtualLine = null;
+                virtualLine.setValues(virtualValues);
+                line = virtualLine;*/
                 for (PointValue value : line.getValues()) {
                     value.setTarget(value.getX() - 1, value.getY());
-                    value.setTarget(theLastXValue, btReceiveData);
                 }
             }
         }
@@ -591,12 +648,15 @@ public class MainActivity extends AppCompatActivity {
         public class BtDataReceiver extends BroadcastReceiver {
             @Override
             public void onReceive (Context context, Intent intent) {
+
                 String btReceiveData = intent.getStringExtra("btReceiveData");
                 btReceiveData = btReceiveData.substring(11, 15);
                 FloatBtReceiveData = Float.parseFloat(btReceiveData) / 1000f;
 
+                generateData(FloatBtReceiveData);
+
                 Log.e("TAG", btReceiveData);
-                prepareDataAnimation(FloatBtReceiveData);
+                prepareDataAnimation();
                 chart.startDataAnimation();
             }
         }
