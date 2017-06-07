@@ -405,7 +405,7 @@ public class MainActivity extends AppCompatActivity {
             // Reset viewport height range to (0,100)
             final Viewport v = new Viewport(chart.getMaximumViewport());
             v.bottom = 0;
-            v.top = 2;
+            v.top = 2000;
             v.left = 0;
             v.right = numberOfPoints - 1;
             chart.setMaximumViewport(v);
@@ -650,12 +650,21 @@ public class MainActivity extends AppCompatActivity {
             public void onReceive (Context context, Intent intent) {
 
                 String btReceiveData = intent.getStringExtra("btReceiveData");
-                btReceiveData = btReceiveData.substring(11, 15);
-                FloatBtReceiveData = Float.parseFloat(btReceiveData) / 1000f;
+                btReceiveData = btReceiveData.trim();
+                String btReceiveTempData = "";
 
+                if(btReceiveData != null && !"".equals(btReceiveData)) {
+                    for(int i=0; i < btReceiveData.length(); i++){
+                        if((btReceiveData.charAt(i) >= 48 && btReceiveData.charAt(i) <= 57) || btReceiveData.charAt(i) == 46){
+                            btReceiveTempData += btReceiveData.charAt(i);
+                        }
+                    }
+                }
+
+                FloatBtReceiveData = Float.parseFloat(btReceiveTempData);
                 generateData(FloatBtReceiveData);
 
-                Log.e("TAG", btReceiveData);
+                Log.e("TAG", btReceiveTempData);
                 prepareDataAnimation();
                 chart.startDataAnimation();
             }
